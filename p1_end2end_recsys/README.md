@@ -64,27 +64,28 @@ X 是一个多业务 super-app。
 
 ## 3. End-to-End Pipeline
 
+```
 [1) Data Sources]
-|
-v
+        |
+        v
 [2) ETL + Feature Store]
-|
-v
+        |
+        v
 [3) Representation / Embeddings]
-|
-v
+        |
+        v
 [4) Candidate Generation (Recall)]
-|
-v
+        |
+        v
 [5) Ranking]
-|
-v
+        |
+        v
 [6) Re-ranking + Constraints]
-|
-v
+        |
+        v
 [7) Serving + Monitoring]
 
-
+```
 ---
 
 ## 4. Pipeline Details
