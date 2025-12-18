@@ -1,78 +1,240 @@
-# Scenario: Search + Recommendation Platform 
+# Search + Recommendation Platform (Super-App)
 
-X 是一个多业务 super-app：用户在 XFood（餐饮/外卖） 和 XPay（支付/金融服务） 中既会“主动找”（Search），也会“被引导发现”（Recommendation）。平台化的 Search + Rec 能复用统一的 索引、特征、召回、排序、实验评估与在线服务，让不同业务线用同一套基础能力更快迭代：
-Search（明确意图）：用户输入 query（如“奶茶”“炸鸡”“附近便利店”），需要高相关、低延迟的结果。
-Rec（弱意图/发现）：用户在首页/频道/结算页看到个性化推荐（餐厅、菜品、优惠券、金融产品入口），目标是提升 discovery→conversion。
-共同挑战：多语言（英语/中英混合）、地理位置强相关、时效性（营业/库存/配送）、商家/活动快速变化、冷启动（新用户/新店/新活动）。
+X 是一个多业务 super-app。  
+用户在 XFood（餐饮 / 外卖） 和 XPay（支付 / 金融服务） 中，既会：
 
-# Pipeline
+- 主动找（Search）
+- 被引导发现（Recommendation）
+
+平台化的 Search + Recommendation 能力，复用统一的：
+
+- 索引（Index）
+- 特征（Features）
+- 召回（Recall）
+- 排序（Ranking）
+- 实验评估（Experimentation）
+- 在线服务（Serving）
+
+从而让不同业务线在同一套基础设施上更快迭代。
+
+---
+
+## 1. Use Cases
+
+### Search（明确意图）
+
+- 用户输入 query  
+  - 示例：`奶茶`、`炸鸡`、`附近便利店`
+- 目标：
+  - 高相关性
+  - 低延迟
+  - 强约束（地理 / 营业 / 配送）
+
+### Recommendation（弱意图 / 发现）
+
+- 出现位置：
+  - 首页
+  - 频道页
+  - 结算页
+- 推荐对象：
+  - 餐厅
+  - 菜品
+  - 优惠券
+  - 金融产品入口
+- 目标：
+  - 提升 discovery → conversion
+
+---
+
+## 2. Shared Challenges
+
+- 多语言（英语 / 中英混合）
+- 强地理位置相关
+- 强时效性
+  - 营业状态
+  - 库存
+  - 配送能力
+- 商家 / 活动快速变化
+- 冷启动问题
+  - 新用户
+  - 新店
+  - 新活动
+
+---
+
+## 3. End-to-End Pipeline
 
 [1) Data Sources]
-- User behavior: impressions, clicks, orders, add-to-cart, dwell
-- Search logs: query, clicked items, reformulations
-- Item/merchant data: title/desc, category, price, location, open hours
-- Context: user geo, time-of-day, device, campaign/discount
-- (Optional) Payments/finance events for XPay surfaces (high-level preference signals) eg.uses_discount_often = True
-
-            |
-            v
-
+|
+v
 [2) ETL + Feature Store]
-- Clean & join events (dedup, sessionize)
-- Build features:
-  - User: recent history, preferences, price sensitivity, region
-  - Item/Merchant: popularity, freshness, availability, quality
-  - Query: normalized tokens, spelling variants, language ID
-- Store online-ready features (keyed by user_id / item_id / merchant_id)
-
-            |
-            v
-
+|
+v
 [3) Representation / Embeddings]
-- Item embedding (text + category + metadata)
-- User embedding (recent interacted items / sequence summary)
-- Query embedding (for semantic retrieval)
+|
+v
+[4) Candidate Generation (Recall)]
+|
+v
+[5) Ranking]
+|
+v
+[6) Re-ranking + Constraints]
+|
+v
+[7) Serving + Monitoring]
+
+
+---
+
+## 4. Pipeline Details
+
+### 4.1 Data Sources
+
+- User behavior
+  - impressions
+  - clicks
+  - orders
+  - add-to-cart
+  - dwell
+- Search logs
+  - query
+  - clicked items
+  - reformulations
+- Item / Merchant data
+  - title / description
+  - category
+  - price
+  - location
+  - open hours
+- Context
+  - user geo
+  - time-of-day
+  - device
+  - campaign / discount
+- (Optional) Payments / finance events (XPay)
+  - high-level preference signals  
+    - e.g. `uses_discount_often = true`
+
+---
+
+### 4.2 ETL + Feature Store
+
+- Clean & join events
+  - dedup
+  - sessionize
+- Build features
+  - User
+    - recent history
+    - preferences
+    - price sensitivity
+    - region
+  - Item / Merchant
+    - popularity
+    - freshness
+    - availability
+    - quality
+  - Query
+    - normalized tokens
+    - spelling variants
+    - language ID
+- Store online-ready features
+  - keyed by `user_id / item_id / merchant_id`
+
+---
+
+### 4.3 Representation / Embeddings
+
+- Item embedding
+  - text + category + metadata
+- User embedding
+  - recent interacted items
+  - sequence summary
+- Query embedding
+  - semantic retrieval
 - (Optional) multilingual normalization
 
-            |
-            v
+---
 
-[4) Candidate Generation (Recall)]
-A. Search Recall (query-driven)
-- Lexical: inverted index (BM25/keywords)
-- Semantic: ANN over item embeddings (query->item)
-- Geo/availability filters (open now, deliverable, within radius)
+### 4.4 Candidate Generation (Recall)
 
-B. Recommendation Recall (user-driven)
-- ANN over item embeddings (user->item)
-- Popularity/freshness fallback for cold-start users
-- Business constraints (category, budget, region)
+#### A. Search Recall (Query-Driven)
 
-            |
-            v
+- Lexical
+  - inverted index
+  - BM25 / keywords
+- Semantic
+  - ANN over item embeddings
+  - query → item
+- Filters
+  - open now
+  - deliverable
+  - within radius
 
-[5) Ranking]
-- Score candidates with a light model:
-  - similarity (user/query, item)
-  - structured features (price, distance, ETA, discount, popularity, freshness)
-  - context features (time, location)
-- Output: top N ranked list
+#### B. Recommendation Recall (User-Driven)
 
-            |
-            v
+- ANN over item embeddings
+  - user → item
+- Cold-start fallback
+  - popularity
+  - freshness
+- Business constraints
+  - category
+  - budget
+  - region
 
-[6) Re-ranking + Constraints]
-- Diversity (avoid near-duplicates, category balance)
-- Policies/guardrails (availability, sponsored slots, fairness if needed)
-- Final top K list returned to UI
+---
 
-            |
-            v
+### 4.5 Ranking
 
-[7) Serving + Monitoring]
-- Online latency budget (caching, precompute embeddings)
-- Metrics:
-  - Search: NDCG@K, CTR, reformulation rate
-  - Rec: CTR, CVR/order rate, revenue proxy, coverage/diversity
-- Experimentation: A/B or offline replay evaluation
+- Light ranking model
+- Feature groups
+  - similarity (user / query ↔ item)
+  - structured features
+    - price
+    - distance
+    - ETA
+    - discount
+    - popularity
+    - freshness
+  - context features
+    - time
+    - location
+- Output
+  - top N ranked list
 
+---
+
+### 4.6 Re-ranking + Constraints
+
+- Diversity
+  - avoid near-duplicates
+  - category balance
+- Policies / guardrails
+  - availability
+  - sponsored slots
+  - fairness (if needed)
+- Output
+  - final top K list returned to UI
+
+---
+
+### 4.7 Serving + Monitoring
+
+- Online serving
+  - latency budget
+  - caching
+  - precompute embeddings
+- Metrics
+  - Search
+    - NDCG@K
+    - CTR
+    - reformulation rate
+  - Recommendation
+    - CTR
+    - CVR / order rate
+    - revenue proxy
+    - coverage / diversity
+- Experimentation
+  - A/B testing
+  - offline replay evaluation
