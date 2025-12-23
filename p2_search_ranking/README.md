@@ -19,6 +19,25 @@ In on-demand and search-driven platforms, user behavior is often:
 
 Traditional non-sequential or long-term preference models may struggle to capture such dynamics. This project explores how session-based user behavior modeling can improve relevance estimation in search ranking scenarios.
 
+## Data Flow Overview
+
+1. Raw interaction logs
+   - user_id, item_id, timestamp
+   - implicit feedback (view / click / purchase)
+
+2. Session construction
+   - group interactions by user
+   - split into short sessions based on time gaps
+
+3. Feature preparation
+   - query features
+   - item features
+   - behavior sequence features
+
+4. Model input
+   - query as attention target
+   - recent behavior sequence as context
+
 ## Search Pipeline Position
 
 The project is scoped around the ranking stage of a typical search system:
