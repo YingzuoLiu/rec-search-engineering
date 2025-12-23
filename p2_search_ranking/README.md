@@ -172,3 +172,137 @@ with an emphasis on real-time search ranking constraints.
 - 工程复杂性
 
 重点关注实时搜索排序的约束条件。
+
+# 面试问答实战
+
+## 1️⃣ 「你怎么判断模型复杂度是否过高？」
+
+### 一句话核心
+
+看是否超过数据规模与线上 latency 预算的承载能力。
+
+### 展开（面试官听得懂版）
+
+- **复杂度过高通常表现为：**  
+  offline 提升有限，但训练/推理成本明显上升
+
+- **我会结合：**
+  - short session 的平均长度
+  - attention 计算量
+  - ranking latency 预算
+
+- 如果 session 很短，但模型引入了重 attention 或多层结构，性价比就不高
+
+### 追问兜底
+
+如果复杂度偏高，我会先尝试：
+
+- 减少 sequence 长度（只保留最近 N 个）
+- 简化 attention（如加 recency bias）
+- 或退回到轻量 baseline
+
+---
+
+## 2️⃣ 「你怎么知道 sequence model 比 baseline 好？」
+
+### 一句话核心
+
+我主要看**短 session 分桶下的稳定性和一致性**，而不是整体平均值。
+
+### 展开
+
+- 不只看 overall NDCG
+
+- 会按：
+  - session length（1-2, 3-5）
+  - 冷启动用户
+
+- 如果 sequence model 在这些子集上更稳，才算有价值
+
+### 面试官追问兜底
+
+如果只在长 session 上好、短 session 没提升，我会倾向不用 sequence model。
+
+---
+
+## 3️⃣ 「如果 offline 指标涨了，线上不涨怎么办？」
+
+### 一句话核心
+
+优先怀疑 **offline-online mismatch**，而不是模型本身。
+
+### 展开
+
+常见原因：
+
+- offline label 和线上目标不一致
+- offline 没考虑曝光偏差
+- latency 导致 serving 行为改变
+
+### 我会怎么做
+
+- 检查 offline 评估是否包含真实 query
+- 看线上用户行为是否发生分布变化
+- 回滚到 rule + baseline 对照验证
+
+### 非常加分的一句
+
+offline 提升是"必要条件"，不是"充分条件"。
+
+---
+
+## 4️⃣ 「ranking 不相关你怎么查？」
+
+我会**分层排查**。
+
+### 展开
+
+1. **Query 理解问题**（query embedding 是否偏）
+2. **召回覆盖问题**（candidate 本身不对）
+3. **ranking 特征问题**（行为特征失效）
+4. **分布漂移**（embedding / 行为变化）
+
+---
+
+## 5️⃣ 「rule vs model 怎么配合？」
+
+model 负责相关性，rule 负责**可控性与稳定性**。
+
+### 展开
+
+- **model**：学习复杂模式，提升平均效果
+
+- **rule**：
+  - 插新商家
+  - 控制曝光比例
+  - 快速兜底、可回滚
+
+---
+
+## 6️⃣ 「offline / online 指标怎么选？」
+
+offline 看**排序质量**，online 看**用户真实反馈**。
+
+### 展开
+
+- **offline**：
+  - NDCG / Recall@K
+  - 分 session / query bucket
+
+- **online**：
+  - CTR / CVR
+  - 结合 latency、fallback rate
+
+### 重要补充
+
+offline 用来筛方案，online 用来做决策。
+
+---
+
+## Coding
+
+1️⃣ Session 切分: 超过 30 分钟算新 session
+
+2️⃣ TopK Merge: 来自多个召回源，怎么合并 TopK？
+
+3️⃣ Rule-based Rerank
