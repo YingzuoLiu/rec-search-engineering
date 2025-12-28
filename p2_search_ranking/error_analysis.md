@@ -170,3 +170,155 @@
 ## 面试时你可以这样总结
 
 **"我在项目中会把失败 case 按 Query、Recall、Ranking 拆分分析，很多时候问题并不是模型不够复杂，而是语义边界、数据覆盖或阶段职责不清。"**
+
+---
+# Error Analysis for Session-based Sequence Recommendation (DIN-style Attention)
+
+## 1. Error Analysis 的目标
+
+**本分析聚焦于 DIN-style attention 序列模型在真实 session 场景下的失败模式，  
+尤其关注：**
+
+- **短 session**
+- **稀疏行为**
+- **强时序偏置**
+- **实时推荐场景下的稳定性问题**
+
+**分析重点不在模型结构本身，而在于 模型在什么条件下失效或收益有限。**
+
+## 2. Error 分类总览
+
+**基于离线评估与人工 case review，主要错误可归为以下四类：**
+
+1. **Short Session Degeneration**
+2. **Attention Collapse under Sparse Signals**
+3. **Over-weighted Recency Bias**
+4. **Latency-Complexity Mismatch**
+
+## 3. Error Type 1：短 Session 下序列模型退化
+
+### 现象
+
+**在 session 长度 ≤ 2 的情况下：**
+
+- **DIN-style attention 的排序结果  
+  与非序列 baseline（如 popularity / static embedding）高度相似**
+- **排序结果对用户即时意图区分度有限**
+
+### 示例场景
+
+**Session: [click item_A]**
+
+**Query / context: snack-related browsing**
+
+**Top-K 结果：**
+- **主要由高点击 / 热门 item 构成**
+- **与 session 中唯一行为弱相关**
+
+### 问题定位
+
+- **Attention 机制缺乏足够上下文**
+- **Query-Key 匹配退化为全局统计特征**
+- **模型行为接近 popularity-based ranking**
+
+### 错误类型
+
+- **Sequence Signal Insufficiency**
+- **Model Degeneration on Short Sessions**
+
+### 当前结论
+
+**在极短 session 场景下，序列模型无法显著优于非序列方法。**
+
+---
+
+## 4. Error Type 2：稀疏行为导致 Attention Collapse
+
+### 现象
+
+**在包含大量 view / weak click、但缺乏 purchase 或强反馈的 session 中：**
+
+- **Attention 权重高度集中或近似均匀**
+- **无法有效区分关键行为**
+
+### 示例场景
+
+**Session: [view A, view B, view C]**
+
+**Attention 权重分布：**
+
+```
+A: 0.33, B: 0.34, C: 0.33
+```
+
+### 问题定位
+
+- **隐式反馈信号噪声高**
+- **DIN 中 attention score 难以学习有效对比**
+- **行为类型区分度不足**
+
+### 错误类型
+
+- **Attention Collapse**
+- **Noisy Implicit Feedback**
+
+### 当前结论
+
+**序列模型在弱信号主导的 session 中，attention 难以形成有效偏好表达。**
+
+---
+
+## 5. Error Type 3：Recency 过强导致长期偏好被抑制
+
+### 现象
+
+**当模型对最近行为赋予较高权重时：**
+
+- **最近一次点击主导排序**
+- **长期稳定偏好 item 被系统性压制**
+
+### 示例场景
+
+**Session: [frequent healthy food clicks, recent dessert click]**
+
+**排序结果：**
+- **Dessert item 被过度提升**
+- **Healthy item 排名显著下降**
+
+### 问题定位
+
+- **Recency weighting 与 attention 叠加**
+- **对短期噪声行为过度敏感**
+
+### 错误类型
+
+- **Recency Bias**
+- **Preference Drift Misinterpretation**
+
+### 当前结论
+
+**在部分场景中，recency 强化会放大噪声而非真实意图。**
+
+---
+
+## 6. Error Type 4：模型复杂度与实时推理不匹配
+
+### 现象
+
+- **序列模型在离线指标上有小幅提升**
+- **但推理 latency 明显高于非序列 baseline**
+- **在短 session 场景下，性能收益不稳定**
+
+### 问题定位
+
+- **Attention 计算与序列长度线性相关**
+- **短 session 下收益不足以抵消推理成本**
+
+### 错误类型
+
+- **Cost-Benefit Mismatch**
+- **Inference Inefficiency**
+
+### 当前结论
+
+**在实时推荐系统中，序列模型的使用需严格受场景与 session 条件约束。**
