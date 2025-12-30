@@ -112,3 +112,51 @@
     - **TF-IDF / BM25 处理高频明确 query**
     - **LLM embedding 处理冷启动 / 模糊 query**
   - **或作为 recall expansion / rerank 信号**
+ 
+---
+# 面试问答实战
+
+## 1️⃣为什么不用「纯 embedding」？
+
+因为纯 embedding 对“表达错位”的 query–item 对齐能力有限。
+展开:
+* 用户 query 是：
+   * 口语化
+   * 模糊
+   * 描述性
+* item 是：
+   * 结构化
+   * 商品语言
+* 直接 embedding：
+   * 相似度不稳定
+* LLM 的价值：
+   * 改写 / 对齐表达
+   * 再交给 embedding 做相似度
+     
+## 2️⃣ 成本怎么控制？什么场景不用 LLM？
+### 在搜索系统里：
+
+- 高频、稳定的 query
+- 统计信号充分的场景
+- 对 latency 极端敏感的路径
+
+这些问题本身是 **统计可解的**，用规则、TF-IDF、BM25 或 embedding：
+
+- 更便宜
+- 更稳定
+- 更可控
+
+👉 **这些场景我不会用 LLM。**
+
+## LLM 只用于：
+
+- 冷启动 query
+- 模糊 / 描述性 query
+- 语义错位严重的情况
+
+### 并且：
+
+- 不走全量
+- 有 query routing
+- 有 cache / TTL
+- 超时直接 fallback
