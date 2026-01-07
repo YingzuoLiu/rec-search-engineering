@@ -145,3 +145,15 @@ In such scenarios:
 ## ✅ Key Takeaway
 
 This project demonstrates how **multimodal representation learning** can be cleanly integrated into the **recall layer** of a search/recommendation system to mitigate cold-start issues—**without introducing heavy LLM dependencies or latency risks**.
+
+## Limitations & Future Work
+
+**Limitations**
+- 本项目主要验证多模态信息在冷启动召回场景下的有效性，当前融合方式基于 CLIP 提供的统一 embedding 空间，未对不同模态的重要性进行样本级建模。
+- 对于图片缺失或质量较低的商品，多模态表示的稳定性仍依赖文本与基础元数据路径作为隐式 fallback。
+- 实验规模相对有限，结果更侧重方法可行性验证，而非给出具有统计显著性的工业级结论。
+
+**Future Work**
+- 在保持召回阶段低延迟的前提下，引入 gating 或条件融合机制，使模型能够根据商品特征自适应调整不同模态的贡献。
+- 在更贴近真实业务分布的数据上，评估多模态召回对冷启动商品曝光与点击行为的长期影响。
+- 设计显式的模态降级与路由策略，提高系统在模态缺失或噪声场景下的鲁棒性。
