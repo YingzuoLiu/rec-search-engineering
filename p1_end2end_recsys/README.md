@@ -239,3 +239,17 @@ X 是一个多业务 super-app。
 - Experimentation
   - A/B testing
   - offline replay evaluation
+
+---
+
+### 5.0 Limitations & Future Work
+
+**Limitations**
+- 离线评估基于模拟交互日志，难以完全反映真实线上环境中的曝光偏差与反馈延迟问题。
+- 指标主要集中于 Recall@K 与 NDCG@K，未直接衡量对业务目标（如转化率或留存）的影响。
+- 实验结果对负采样策略与数据切分方式较为敏感，存在一定评估偏差风险。
+
+**Future Work**
+- 引入反事实评估或日志回放（replay）机制，减少离线指标与线上效果之间的偏差。
+- 在条件允许的情况下，通过线上 A/B 测试验证不同排序策略的真实收益。
+- 结合多指标联合评估，避免模型仅针对单一指标过度优化。
